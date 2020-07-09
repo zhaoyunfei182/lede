@@ -41,7 +41,113 @@ jobs:
           sudo -E apt-get -y autoremove --purge
           sudo -E apt-get clean
 
+          df -h          # cat >> .config <<EOF
+176
+          # CONFIG_PACKAGE_curl=y
+177
+          # CONFIG_PACKAGE_htop=y
+178
+          # CONFIG_PACKAGE_nano=y
+179
+          # CONFIG_PACKAGE_screen=y
+180
+          # CONFIG_PACKAGE_tree=y
+181
+          # CONFIG_PACKAGE_vim-fuller=y
+182
+          # CONFIG_PACKAGE_wget=y
+183
+          # EOF
+184
+​
+185
+          # 取消编译VMware镜像以及镜像填充 (不要删除被缩进的注释符号):
+186
+          # cat >> .config <<EOF
+187
+          # # CONFIG_TARGET_IMAGES_PAD is not set
+188
+          # # CONFIG_VMDK_IMAGES is not set
+189
+          # EOF
+190
+​
+191
+          # 
+192
+          # ========================固件定制部分结束========================
+193
+          # 
+194
+​
+195
+          sed -i 's/^[ \t]*//g' ./.config
+196
+          make defconfig
+197
+​
+198
+      - name: Make download
+199
+        run: |
+200
+          make download -j8 || make download -j1 V=s
+201
+          find ./dl/ -size -1024c -exec rm -f {} \;
+202
           df -h
+203
+​
+204
+      - name: Compile firmware
+205
+        run: |
+206
+          make -j$(nproc) || make -j1 V=s
+207
+          echo "======================="
+208
+          echo "Space usage:"
+209
+          echo "======================="
+210
+          df -h
+211
+          echo "======================="
+212
+          du -h ./ --max-depth=1
+213
+          du -h /mnt/openwrt/ --max-depth=1 || true
+214
+​
+215
+      - name: Prepare artifact
+216
+        run: find ./bin/targets/ -type d -name "packages" | xargs rm -rf {}
+217
+​
+218
+      - name: Upload config.seed
+219
+        uses: actions/upload-artifact@master
+220
+        with:
+221
+          name: config.seed
+222
+          path: ./bin/targets/*/*/config.seed
+223
+​
+224
+      - name: Upload firmware
+225
+        uses: actions/upload-artifact@master
+226
+        with:
+227
+          name: OpenWrt_firmware
+228
+          path: ./bin/targets/
 
       - name: Update feeds
         run: |
